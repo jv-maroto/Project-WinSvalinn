@@ -45,6 +45,28 @@ if str(_SRC) not in sys.path:
 
 app = FastAPI(title="WinSvalinn Sidecar", version="1.0.0")
 
+
+@app.on_event("startup")
+def _warmup() -> None:
+    """Pre-warm the slow first process enumeration in the background.
+
+    The packaged exe imports ``winsvalinn.core`` lazily and the very first
+    ``psutil`` sweep pays the OS handle-cache cost, which made the first
+    Processes view load take several seconds. Doing one sweep at startup (off
+    the request path) means the user's first navigation is already warm.
+    """
+    import threading
+
+    def _run() -> None:
+        try:
+            from winsvalinn.core import process_tree
+
+            process_tree.build_process_tree()
+        except Exception:
+            pass
+
+    threading.Thread(target=_run, daemon=True).start()
+
 # The sidecar only serves the local Tauri app. Lock CORS to the app origins
 # (not "*") so a web page can't read its responses cross-origin.
 _ALLOWED_ORIGINS = [
