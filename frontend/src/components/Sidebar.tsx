@@ -132,7 +132,7 @@ export function Sidebar({ active, onChange }: Props) {
         </p>
       </div>
 
-      <div className="px-3 text-center text-[10px] text-muted-foreground/60">v1.0.2</div>
+      <div className="px-3 text-center text-[10px] text-muted-foreground/60">v1.0.0</div>
     </aside>
   );
 }

@@ -43,7 +43,7 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 
-app = FastAPI(title="WinSvalinn Sidecar", version="1.0.2")
+app = FastAPI(title="WinSvalinn Sidecar", version="1.0.0")
 
 # The sidecar only serves the local Tauri app. Lock CORS to the app origins
 # (not "*") so a web page can't read its responses cross-origin.
@@ -127,7 +127,7 @@ def _sys_optimizer():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "version": "1.0.2"}
+    return {"ok": True, "version": "1.0.0"}
 
 
 @app.get("/system/info")

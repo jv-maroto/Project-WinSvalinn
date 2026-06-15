@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "winsvalinn-sidecar"
-version = "1.0.2"
+version = "1.0.0"
 description = "Python FastAPI sidecar for the WinSvalinn Tauri app"
 readme = "README.md"
 license = "MIT"

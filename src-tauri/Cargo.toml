@@ -1,6 +1,6 @@
 [package]
 name = "winsvalinn"
-version = "1.0.2"
+version = "1.0.0"
 description = "WinSvalinn — system security & optimization for Windows"
 authors = ["Javier Maroto"]
 license = "MIT"
