@@ -1,0 +1,104 @@
+name: Release
+
+# Builds the Windows x64 installers and attaches them to a GitHub Release.
+# Trigger by pushing a tag like `v1.0.0`, or run manually (workflow_dispatch)
+# to get downloadable build artifacts.
+#
+# The Python FastAPI sidecar is compiled with PyInstaller and bundled as the
+# Tauri externalBin (src-tauri/binaries/winsvalinn-sidecar-<triple>.exe); the
+# shell starts it automatically (see src-tauri/src/lib.rs). The standalone
+# sidecar/CLI exe is also attached for headless/terminal use. Releases are
+# created as DRAFTS so nothing ships to users automatically.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Windows installers (x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Build standalone sidecar + CLI (PyInstaller, x64)
+        run: >
+          pyinstaller --noconfirm --onefile --name winsvalinn-sidecar
+          --collect-all psutil --collect-all uvicorn
+          --collect-submodules winsvalinn --collect-submodules sidecar
+          run_sidecar.py
+
+      - name: Stage sidecar as Tauri externalBin
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force src-tauri/binaries | Out-Null
+          Copy-Item dist/winsvalinn-sidecar.exe `
+            src-tauri/binaries/winsvalinn-sidecar-x86_64-pc-windows-msvc.exe
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build Tauri installers (MSI + NSIS) and publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: "WinSvalinn ${{ github.ref_name }}"
+          releaseDraft: false
+          releaseBody: |
+            Windows 10/11 (64-bit). Descarga el instalador NSIS o MSI; la app
+            arranca en edición Free. Introduce una clave en Ajustes → Licencia
+            para desbloquear Empresarial.
+          args: --target x86_64-pc-windows-msvc
+
+      - name: Attach standalone sidecar/CLI exe to the release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          files: dist/winsvalinn-sidecar.exe
+
+      - name: Upload build artifacts (manual runs)
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: winsvalinn-windows-x64
+          path: |
+            dist/winsvalinn-sidecar.exe
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+          if-no-files-found: warn
