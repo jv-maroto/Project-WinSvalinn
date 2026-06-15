@@ -18,9 +18,10 @@ except ImportError:
 def _safe_info(proc):
     """Read process info safely; some attrs raise on access.
 
-    Only the fields the UI actually renders are collected. Notably we skip
-    ``username()`` (resolves the SID via LookupAccountSid — very slow on Windows)
-    and other unused attrs, which made the tree take seconds to build.
+    Only the fields the UI actually renders are collected. We skip ``username()``
+    (resolves the SID via LookupAccountSid) and ``exe()`` (resolves the on-disk
+    path — adds ~6s on the first build, the rest is OS-cached) since both are very
+    slow on Windows and unused by the tree view.
     """
     try:
         with proc.oneshot():
@@ -28,7 +29,6 @@ def _safe_info(proc):
                 "pid": proc.pid,
                 "ppid": proc.ppid(),
                 "name": proc.name(),
-                "exe": proc.exe() if hasattr(proc, "exe") else "",
                 "memory_mb": proc.memory_info().rss / (1024 * 1024),
             }
     except (psutil.NoSuchProcess, psutil.AccessDenied, OSError):
