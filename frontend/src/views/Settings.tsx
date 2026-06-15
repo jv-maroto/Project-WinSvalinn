@@ -392,7 +392,7 @@ function ScheduleSection({
   t, pro,
 }: { t: (k: string, f?: string) => string; pro: boolean }) {
   const [tasks, setTasks] = useState<ScheduleTask[]>([]);
-  const [scan, setScan] = useState("security");
+  const scan = "security";
   const [frequency, setFrequency] = useState("daily");
   const [time, setTime] = useState("03:00");
   const [busy, setBusy] = useState(false);
@@ -439,19 +439,15 @@ function ScheduleSection({
     }
   };
 
-  const SCAN_LABEL = (s: string) =>
-    s === "optimization" ? t("settings.schedule.scanOptimization") : t("settings.schedule.scanSecurity");
-
   const body = (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
-        <Field label={t("settings.schedule.scan")}>
-          <Select value={scan} onChange={setScan} disabled={pro ? false : true}
-            options={[
-              { v: "security", label: t("settings.schedule.scanSecurity") },
-              { v: "optimization", label: t("settings.schedule.scanOptimization") },
-            ]} />
-        </Field>
+      <p className="text-xs text-muted-foreground">
+        {t(
+          "settings.schedule.monitorDesc",
+          "Vigila tu configuración de seguridad y te avisa con una notificación si algo se debilita (firewall, Defender, UAC, RDP…), por ejemplo tras una actualización u otra app.",
+        )}
+      </p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
         <Field label={t("settings.schedule.frequency")}>
           <Select value={frequency} onChange={setFrequency} disabled={pro ? false : true}
             options={[
@@ -466,7 +462,7 @@ function ScheduleSection({
         </Field>
         <Button onClick={create} disabled={!pro || busy}>
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-          {t("settings.schedule.add")}
+          {t("settings.schedule.enable", "Activar")}
         </Button>
       </div>
 
@@ -477,7 +473,7 @@ function ScheduleSection({
           <div key={task.id}
             className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">{SCAN_LABEL(task.scan)}</span>
+              <span className="font-medium">{t("settings.schedule.monitorName", "Monitor de seguridad")}</span>
               {task.schedule && task.schedule !== "N/A" && (
                 <Badge variant="outline" className="text-[10px]">{task.schedule}</Badge>
               )}

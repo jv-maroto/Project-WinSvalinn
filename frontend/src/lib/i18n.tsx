@@ -126,7 +126,7 @@ const ES: Dict = {
   "settings.vt.clearError": "No se pudo eliminar la clave",
 
   // Settings · Scheduled scans
-  "settings.schedule": "Análisis programados",
+  "settings.schedule": "Monitor de seguridad",
   "settings.schedule.scan": "Análisis",
   "settings.schedule.frequency": "Frecuencia",
   "settings.schedule.time": "Hora",
@@ -277,7 +277,7 @@ const EN: Dict = {
   "settings.vt.clearError": "Could not remove the key",
 
   // Settings · Scheduled scans
-  "settings.schedule": "Scheduled scans",
+  "settings.schedule": "Security monitor",
   "settings.schedule.scan": "Scan",
   "settings.schedule.frequency": "Frequency",
   "settings.schedule.time": "Time",
