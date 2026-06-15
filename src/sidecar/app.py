@@ -67,6 +67,7 @@ def _warmup() -> None:
 
     threading.Thread(target=_run, daemon=True).start()
 
+
 # The sidecar only serves the local Tauri app. Lock CORS to the app origins
 # (not "*") so a web page can't read its responses cross-origin.
 _ALLOWED_ORIGINS = [
