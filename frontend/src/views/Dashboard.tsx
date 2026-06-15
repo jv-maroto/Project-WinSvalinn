@@ -112,8 +112,38 @@ export function Dashboard() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
-  useEffect(() => { api.systemInfo().then(setInfo).catch(() => {}); }, []);
-  useEffect(() => { api.optimizationScore().then((s) => setOptScore(s.score)).catch(() => {}); }, []);
+  // System info is static — load it as soon as the sidecar answers, retrying
+  // until it does (the sidecar can take a few seconds to come up on launch).
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const load = async () => {
+      try {
+        const i = await api.systemInfo();
+        if (!cancelled) setInfo(i);
+      } catch {
+        if (!cancelled) timer = setTimeout(load, 1200);
+      }
+    };
+    load();
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, []);
+
+  // Optimization score — same: keep retrying until the sidecar is reachable.
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const load = async () => {
+      try {
+        const s = await api.optimizationScore();
+        if (!cancelled) setOptScore(s.score);
+      } catch {
+        if (!cancelled) timer = setTimeout(load, 1200);
+      }
+    };
+    load();
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, []);
 
   const runSecurityScan = async () => {
     const cur = securityStore.get();
@@ -127,9 +157,24 @@ export function Dashboard() {
     }
   };
 
+  // Auto-scan once the sidecar is reachable, retrying the probe until it is, so
+  // the score shows up on its own (no need to navigate away and back).
   useEffect(() => {
-    const s = securityStore.get();
-    if (s.score === null && !s.running) runSecurityScan();
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const start = async () => {
+      const s = securityStore.get();
+      if (s.score !== null || s.running) return;
+      try {
+        await api.systemHealth();
+      } catch {
+        if (!cancelled) timer = setTimeout(start, 1200);
+        return;
+      }
+      if (!cancelled) runSecurityScan();
+    };
+    start();
+    return () => { cancelled = true; clearTimeout(timer); };
   }, []);
 
   return (
@@ -161,6 +206,13 @@ export function Dashboard() {
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Loader2 className="size-3.5 animate-spin" /> {t("dashboard.scanning", "Analizando seguridad…")}
             </p>
+          ) : sec.score == null ? (
+            <button
+              onClick={runSecurityScan}
+              className="flex items-center gap-1.5 rounded-full bg-accent-gradient px-4 py-1.5 text-xs font-semibold text-[#05080d] ring-glow"
+            >
+              <Play className="size-3.5" /> {t("dashboard.analyze", "Analizar seguridad")}
+            </button>
           ) : (
             <button
               onClick={runSecurityScan}

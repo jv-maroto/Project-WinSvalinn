@@ -79,7 +79,7 @@ export function Memory() {
 
       <div className="glass overflow-hidden rounded-2xl">
         <h2 className="font-heading p-6 pb-3 text-base font-semibold">{t("memory.tableTitle", "Top procesos por memoria")}</h2>
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className="max-h-[420px] overflow-y-auto px-6 pb-4">
             <Table>
               <TableHeader className="sticky top-0 bg-card">
                 <TableRow>
