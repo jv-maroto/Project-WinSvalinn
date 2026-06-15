@@ -1,6 +1,0 @@
-"""
-WinSvalinn - System Security & Optimization Suite for Windows
-"""
-
-__version__ = "2.0.0"
-__author__ = "WinSvalinn Team"

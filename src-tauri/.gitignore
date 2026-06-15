@@ -1,3 +1,0 @@
-# Cargo
-target/
-# Cargo.lock is committed (this is an app) for reproducible CI builds.
