@@ -342,8 +342,6 @@ export function Settings() {
             value={!!cfg?.ui?.dry_run_default} onChange={(v) => patch(["ui", "dry_run_default"], v)} />
           <Toggle id="confirm" label={t("settings.security.confirmDestructive", "Confirmar acciones destructivas")}
             value={cfg?.ui?.confirm_destructive_actions ?? true} onChange={(v) => patch(["ui", "confirm_destructive_actions"], v)} />
-          <Toggle id="elevate" label={t("settings.security.autoElevate", "Pedir elevación admin automáticamente al arrancar")}
-            value={!!cfg?.ui?.auto_elevate} onChange={(v) => patch(["ui", "auto_elevate"], v)} />
         </div>
       </Section>
 
