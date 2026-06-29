@@ -81,14 +81,22 @@ export const hasFeature = (_f: ProFeature): boolean =>
  */
 export let isPro = state.edition === "empresarial";
 
-/** Resolve the edition from the sidecar. Tolerates offline (stays free). */
+/**
+ * Resolve the edition from the sidecar. The sidecar can take several seconds to
+ * come up on launch, so we retry until it answers — otherwise a saved license
+ * would be missed and the app would wrongly drop to Free on every restart.
+ */
 export async function initEdition(): Promise<void> {
-  try {
-    const lic = await api.license();
-    setState(fromLicense(lic));
-  } catch {
-    setState({ ...FREE });
+  for (let i = 0; i < 40; i++) {
+    try {
+      const lic = await api.license();
+      setState(fromLicense(lic));
+      return;
+    } catch {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
   }
+  setState({ ...FREE });
 }
 
 /** Update the store after a license activate/deactivate (used by Ajustes). */

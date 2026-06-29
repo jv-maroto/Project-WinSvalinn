@@ -134,8 +134,13 @@ def resolve_edition(key: str | None) -> dict:
 
 
 def _license_dir() -> Path:
-    """Return the directory where the license file is stored."""
-    base = os.environ.get("LOCALAPPDATA")
+    """Return the directory where the license file is stored.
+
+    Uses %APPDATA% (Roaming), NOT %LOCALAPPDATA%: the app installs under
+    %LOCALAPPDATA%\\WinSvalinn, so storing the license there would wipe it on
+    every reinstall/update. Roaming survives updates.
+    """
+    base = os.environ.get("APPDATA")
     if base:
         return Path(base) / "WinSvalinn"
     return Path.home() / "WinSvalinn"
@@ -146,20 +151,37 @@ def _license_path() -> Path:
     return _license_dir() / _LICENSE_FILENAME
 
 
+def _legacy_license_path() -> Path:
+    """Old location (%LOCALAPPDATA%) — read-only, for migration."""
+    base = os.environ.get("LOCALAPPDATA")
+    root = Path(base) if base else Path.home()
+    return root / "WinSvalinn" / _LICENSE_FILENAME
+
+
 def load_saved_license() -> str | None:
-    """Read the saved license key from disk, or None if not present/unreadable."""
-    path = _license_path()
-    try:
-        if path.is_file():
-            content = path.read_text(encoding="utf-8").strip()
-            return content or None
-    except OSError as exc:
-        logger.warning("Could not read saved license: %s", exc)
+    """Read the saved license key from disk, or None if not present/unreadable.
+
+    Falls back to the legacy %LOCALAPPDATA% location and migrates it so users who
+    activated before the move don't lose their license.
+    """
+    for path in (_license_path(), _legacy_license_path()):
+        try:
+            if path.is_file():
+                content = path.read_text(encoding="utf-8").strip()
+                if content:
+                    if path != _license_path():
+                        try:
+                            save_license(content)
+                        except OSError:
+                            pass
+                    return content
+        except OSError as exc:
+            logger.warning("Could not read saved license at %s: %s", path, exc)
     return None
 
 
 def save_license(key: str) -> None:
-    """Persist the license key (only the key string) under %LOCALAPPDATA%."""
+    """Persist the license key (only the key string) under %APPDATA%."""
     path = _license_path()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
