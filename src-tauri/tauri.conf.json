@@ -15,11 +15,10 @@
         "label": "main",
         "title": "WinSvalinn",
         "width": 1285,
-        "height": 912,
-        "minWidth": 860,
-        "minHeight": 540,
+        "height": 936,
         "center": true,
-        "resizable": true,
+        "resizable": false,
+        "maximizable": false,
         "fullscreen": false,
         "decorations": false,
         "transparent": false,
@@ -47,7 +46,8 @@
         "languages": ["Spanish", "English"],
         "installerIcon": "icons/icon.ico",
         "headerImage": "installer/header.bmp",
-        "sidebarImage": "installer/thanks.bmp"
+        "sidebarImage": "installer/thanks.bmp",
+        "installerHooks": "installer-hooks.nsh"
       }
     }
   },
