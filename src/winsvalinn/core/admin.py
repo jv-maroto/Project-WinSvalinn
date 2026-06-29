@@ -34,11 +34,30 @@ def is_admin() -> bool:
 
 
 def _app_exe() -> str | None:
-    """Best-effort path to the desktop app exe (parent of the sidecar)."""
+    """Best-effort path to the desktop app exe (winsvalinn.exe).
+
+    Walks up the process tree looking for winsvalinn.exe. The direct parent is
+    NOT it: PyInstaller's onefile sidecar runs in a child of its own bootstrap
+    (winsvalinn-sidecar.exe), so getppid() points at the sidecar, not the Tauri
+    app. We skip any winsvalinn-sidecar.exe ancestors and stop at the app.
+    """
     try:
         import psutil
 
-        return psutil.Process(os.getppid()).exe()
+        proc = psutil.Process(os.getpid())
+        for _ in range(6):
+            parent = proc.parent()
+            if parent is None:
+                break
+            try:
+                exe = parent.exe()
+            except Exception:  # noqa: BLE001
+                exe = ""
+            name = os.path.basename(exe or "").lower()
+            if name == "winsvalinn.exe":
+                return exe
+            proc = parent
+        return None
     except Exception:  # noqa: BLE001
         return None
 
