@@ -63,6 +63,17 @@ fn stop_sidecar(app: &tauri::AppHandle) {
     if let Some(child) = app.state::<SidecarProcess>().0.lock().unwrap().take() {
         let _ = child.kill();
     }
+    // The PyInstaller onefile sidecar runs a child process (the real uvicorn
+    // server) that child.kill() leaves orphaned, holding port 8731 and breaking
+    // the next launch ("failed to fetch"). Kill the whole tree by image name.
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/T", "/IM", "winsvalinn-sidecar.exe"])
+            .creation_flags(0x0800_0000)
+            .output();
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -71,11 +82,12 @@ pub fn run() {
     // The "liquid glass" look is done in the frontend (animated backdrop +
     // backdrop-filter), reliable in WebView2 (native transparency breaks it).
     //
-    // window-state plugin: remembers the user's size/position across launches,
-    // so the compact default size in tauri.conf.json is only used on first run.
+    // Fixed, non-resizable window: the UI is laid out for a single size, so the
+    // window is locked to the tauri.conf.json size. No window-state plugin (it
+    // would persist an old size and break the layout).
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_opener::init())
         .manage(SidecarProcess(Mutex::new(None)))
         .setup(|app| {
             start_sidecar(app.handle());
