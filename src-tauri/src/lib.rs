@@ -17,15 +17,30 @@ use tauri_plugin_shell::ShellExt;
 struct SidecarProcess(Mutex<Option<CommandChild>>);
 
 fn start_sidecar(app: &tauri::AppHandle) {
-    // Kill any leftover sidecar (e.g. from a previous crash) so port 8731 is free
-    // and the app never starts up black/dead. CREATE_NO_WINDOW avoids a console flash.
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
+        // Kill any leftover sidecar so port 8731 is free.
         let _ = std::process::Command::new("taskkill")
             .args(["/F", "/IM", "winsvalinn-sidecar.exe"])
             .creation_flags(0x0800_0000)
             .output();
+        // Auto-heal: an older build's "always admin" bug flagged the SIDECAR exe
+        // as RUNASADMIN in HKCU AppCompatFlags. That makes the non-elevated app
+        // unable to spawn it (os error 740 -> "failed to fetch"). Clear it.
+        if let Some(dir) = std::env::current_exe().ok().and_then(|e| e.parent().map(|p| p.to_path_buf())) {
+            let sc = dir.join("winsvalinn-sidecar.exe");
+            let _ = std::process::Command::new("reg")
+                .args([
+                    "delete",
+                    r"HKCU\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers",
+                    "/v",
+                    &sc.to_string_lossy(),
+                    "/f",
+                ])
+                .creation_flags(0x0800_0000)
+                .output();
+        }
     }
 
     let sidecar = match app.shell().sidecar("winsvalinn-sidecar") {
