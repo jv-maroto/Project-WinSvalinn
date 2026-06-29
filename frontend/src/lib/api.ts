@@ -316,4 +316,8 @@ export const api = {
                           }
                           return res.text();
                         },
+
+  // Generate the report, save it to Documents/WinSvalinn and return its path.
+  securityReportSave:   (): Promise<{ ok: boolean; path: string }> =>
+                          req<{ ok: boolean; path: string }>("/security/report/save"),
 };
