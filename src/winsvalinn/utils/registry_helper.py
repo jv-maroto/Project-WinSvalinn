@@ -53,6 +53,12 @@ def set_registry(path, name, value, value_type="REG_DWORD", timeout=10, tag="reg
         record_action(tag, "set_registry", f"{path}\\{name} = {value} ({value_type})")
         return True, f"[DRY-RUN] Would set: {path}\\{name} = {value}"
 
+    # Normalize the type: reg.exe needs "REG_DWORD", but callers often pass
+    # the short form ("DWORD", "SZ"). Without this, reg add fails with a syntax
+    # error and the remediation appears broken.
+    if value_type and not value_type.upper().startswith("REG_"):
+        value_type = "REG_" + value_type.upper()
+
     try:
         logger.info(f"Setting registry: {path}\\{name} = {value} ({value_type})")
 
