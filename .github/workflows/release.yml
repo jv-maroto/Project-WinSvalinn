@@ -57,6 +57,7 @@ jobs:
           pyinstaller --noconfirm --onefile --name winsvalinn-sidecar
           --collect-all psutil --collect-all uvicorn
           --collect-submodules winsvalinn --collect-submodules sidecar
+          --collect-data winsvalinn
           run_sidecar.py
 
       - name: Stage sidecar as Tauri externalBin
